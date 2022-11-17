@@ -1,16 +1,21 @@
 package me.everything.providers.sample.fragments;
 
+import android.Manifest;
 import android.content.Context;
+import android.content.pm.PackageManager;
 import android.database.Cursor;
 import android.os.AsyncTask;
+import android.os.Build;
 import android.os.Bundle;
-import android.support.annotation.Nullable;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.CursorAdapter;
 import android.widget.ListView;
 import android.widget.TextView;
+
+import androidx.annotation.Nullable;
+import androidx.core.app.ActivityCompat;
 
 import me.everything.providers.android.contacts.Contact;
 import me.everything.providers.android.contacts.ContactsProvider;
@@ -25,6 +30,7 @@ public class ContactsFragment extends BaseFragment {
 
     private ListView mListView;
     private ContactsAdapter mAdapter;
+    private static final int PERMISSIONS_REQUEST_READ_CONTACTS = 100;
 
     @Nullable
     @Override
@@ -35,9 +41,22 @@ public class ContactsFragment extends BaseFragment {
         mListView = (ListView) view.findViewById(R.id.list);
 
         // show contacts by using cursor
-        new GetContactsTask().execute();
+
+
+        showContacts();
 
         return view;
+    }
+
+    private void showContacts() {
+        // Check the SDK version and whether the permission is already granted or not.
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M && ActivityCompat.checkSelfPermission(this.getActivity(), Manifest.permission.READ_CONTACTS) != PackageManager.PERMISSION_GRANTED) {
+            this.getActivity().requestPermissions(new String[]{Manifest.permission.READ_CONTACTS}, PERMISSIONS_REQUEST_READ_CONTACTS);
+            //After this point you wait for callback in onRequestPermissionsResult(int, String[], int[]) overriden method
+        } else {
+            // Android version is lesser than 6.0 or the permission is already granted.
+            new GetContactsTask().execute();
+        }
     }
 
     /**

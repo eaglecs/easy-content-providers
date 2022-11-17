@@ -28,7 +28,9 @@ public class CallsFragment extends RecycleViewCursorFragment<Call> {
     @Override
     protected void bindEntity(Call call, TextView title, TextView details) {
         title.setText(call.number);
-        details.setText(call.type.toString());
+        if (call.type != null){
+            details.setText(call.type.toString());
+        }
     }
 
     @Override

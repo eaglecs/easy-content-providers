@@ -1,15 +1,23 @@
 package me.everything.providers.sample.base;
 
+import static androidx.core.content.PermissionChecker.PERMISSION_GRANTED;
+
+import android.Manifest;
 import android.content.DialogInterface;
+import android.content.pm.PackageManager;
+import android.os.Build;
 import android.os.Bundle;
-import android.support.annotation.Nullable;
-import android.support.v7.app.AlertDialog;
-import android.support.v7.widget.LinearLayoutManager;
-import android.support.v7.widget.RecyclerView;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.TextView;
+
+import androidx.annotation.Nullable;
+import androidx.appcompat.app.AlertDialog;
+import androidx.core.app.ActivityCompat;
+import androidx.core.content.ContextCompat;
+import androidx.recyclerview.widget.LinearLayoutManager;
+import androidx.recyclerview.widget.RecyclerView;
 
 import java.util.List;
 
@@ -47,21 +55,31 @@ public abstract class RecycleViewListFragment<T extends Entity> extends BaseFrag
         mRecyclerView.setLayoutManager(llm);
         mAdapter = new EntitiesAdapter();
         mRecyclerView.setAdapter(mAdapter);
-
-        // load data
-        GetEntitiesTask<T> getEntitiesTask = new GetEntitiesTask.Builder<T>()
-                .setFetcher(getFetcher())
-                .setCallback(new GetEntitiesTask.TaskListener<T>() {
-                    @Override
-                    public void onComplete(List<T> entities) {
+        final int callbackId = 42;
+        if (checkPermissions(callbackId, Manifest.permission.READ_CALENDAR, Manifest.permission.WRITE_CALENDAR)) {
+            // load data
+            GetEntitiesTask<T> getEntitiesTask = new GetEntitiesTask.Builder<T>()
+                    .setFetcher(getFetcher())
+                    .setCallback((GetEntitiesTask.TaskListener<T>) entities -> {
                         mEntities = entities;
                         mAdapter.notifyDataSetChanged();
-                    }
-                })
-                .build();
-        getEntitiesTask.execute();
+                    })
+                    .build();
+            getEntitiesTask.execute();
+        }
 
         return view;
+    }
+
+    private boolean checkPermissions(int callbackId, String... permissionsId) {
+        boolean permissions = true;
+        for (String p : permissionsId) {
+            permissions = permissions && ContextCompat.checkSelfPermission(this.getActivity(), p) == PERMISSION_GRANTED;
+        }
+
+        if (!permissions)
+            ActivityCompat.requestPermissions(this.getActivity(), permissionsId, callbackId);
+        return permissions;
     }
 
     private int getCount() {

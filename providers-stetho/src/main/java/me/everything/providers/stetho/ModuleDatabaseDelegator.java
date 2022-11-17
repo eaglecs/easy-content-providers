@@ -20,7 +20,7 @@ public class ModuleDatabaseDelegator {
     private com.facebook.stetho.inspector.protocol.module.Database mDatabase;
 
     public ModuleDatabaseDelegator(Context context) {
-        mDatabase = new Database(context);
+        mDatabase = new Database();
     }
 
     @ChromeDevtoolsMethod

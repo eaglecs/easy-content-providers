@@ -1,20 +1,26 @@
 package me.everything.providers.sample.base;
 
+import android.Manifest;
 import android.content.DialogInterface;
+import android.content.pm.PackageManager;
 import android.database.Cursor;
+import android.os.Build;
 import android.os.Bundle;
-import android.support.annotation.Nullable;
-import android.support.v7.app.AlertDialog;
-import android.support.v7.widget.LinearLayoutManager;
-import android.support.v7.widget.RecyclerView;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.TextView;
 
+import androidx.annotation.Nullable;
+import androidx.appcompat.app.AlertDialog;
+import androidx.core.app.ActivityCompat;
+import androidx.recyclerview.widget.LinearLayoutManager;
+import androidx.recyclerview.widget.RecyclerView;
+
 import me.everything.providers.core.Data;
 import me.everything.providers.core.Entity;
 import me.everything.providers.sample.R;
+import me.everything.providers.sample.fragments.ContactsFragment;
 
 /**
  * Created by sromku.
@@ -47,19 +53,27 @@ public abstract class RecycleViewCursorFragment<T extends Entity> extends BaseFr
         mRecyclerView.setLayoutManager(llm);
         mAdapter = new EntitiesAdapter();
         mRecyclerView.setAdapter(mAdapter);
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M && ActivityCompat.checkSelfPermission(this.getActivity(), Manifest.permission.WRITE_CALL_LOG) != PackageManager.PERMISSION_GRANTED) {
+            this.getActivity().requestPermissions(new String[]{Manifest.permission.WRITE_CALL_LOG}, 1);
+            //After this point you wait for callback in onRequestPermissionsResult(int, String[], int[]) overriden method
+        } else {
+            // load data
+            GetCursorTask<T> getCursorTask = new GetCursorTask.Builder<T>()
+                    .setFetcher(getFetcher())
+                    .setCallback(new GetCursorTask.TaskListener<T>() {
+                        @Override
+                        public void onComplete(Data<T> data) {
+                            mData = data;
+                            mAdapter.notifyDataSetChanged();
+                        }
+                    })
+                    .build();
+            getCursorTask.execute();
+        }
 
-        // load data
-        GetCursorTask<T> getCursorTask = new GetCursorTask.Builder<T>()
-                .setFetcher(getFetcher())
-                .setCallback(new GetCursorTask.TaskListener<T>() {
-                    @Override
-                    public void onComplete(Data<T> data) {
-                        mData = data;
-                        mAdapter.notifyDataSetChanged();
-                    }
-                })
-                .build();
-        getCursorTask.execute();
+
+
+
 
         return view;
     }
